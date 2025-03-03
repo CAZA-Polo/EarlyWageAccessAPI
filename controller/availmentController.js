@@ -29,8 +29,8 @@ const setLoanDueDate = (salary_days) => {
 
     let found = false;
 
-    for (const salary_day of salary_days) {
-        if (today <= salary_day) {
+    for(const salary_day of salary_days) {
+        if(today <= salary_day) {
             dueDate.setMonth(dueDate.getMonth() + 1, salary_day); // Set due date to next month
             found = true;
             break;
@@ -38,7 +38,7 @@ const setLoanDueDate = (salary_days) => {
     }
 
     // If today is greater than all salary days, set the due date to the last salary day
-    if (!found) {
+    if(!found) {
         dueDate.setMonth(dueDate.getMonth() + 1, salary_days[salary_days.length - 1]);
     }
 

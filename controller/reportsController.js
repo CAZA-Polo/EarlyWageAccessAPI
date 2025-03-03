@@ -6,10 +6,11 @@ const serverErrorMessage = 'Internal server error, please try again';
 
 module.exports.employee_onboarding_list = async (req,res) => {
 
-    const { employer_id } = req.params;
+    const { employer_id } = req.query;
     const title = 'EWA Employee Onboarding List';
 
     try {
+        if(!employer_id) throw Error('Employer CIF is required');
         // customer CIF, customer name, account, mobile number, employer account, employer name, email address
         const employerCustomer = await Customer.findOne({ _id: employer_id, is_employer: true })
         .populate({
@@ -50,10 +51,11 @@ module.exports.employee_onboarding_list = async (req,res) => {
 }
 
 module.exports.cash_advance_limit_issuance = async (req,res) => {
-    const { employer_id } = req.params;
+    const { employer_id } = req.query;
     const title = 'Cash Advance Limit Issuance Report'
 
     try {
+        if(!employer_id) throw Error('Employer CIF is required');
         const employerCustomer = await Customer.findById(employer_id)
         .populate({
             path: 'employees'
@@ -96,30 +98,58 @@ module.exports.cash_advance_limit_issuance = async (req,res) => {
 
 // Get all advances which are not paid yet
 module.exports.cash_advance_availment = async(req,res) => {
-    const { employee_acct_no } = req.params;
+    const { employee_acct_no } = req.query;
 
     try {
         let availments;
-        
+        let data;
+        let availmentData;
+
         if(employee_acct_no) {
             const account = await Account.findOne({ account_number: employee_acct_no }).populate('customer_id');
-            availments = await Availment.find({ account_id: account._id, is_paid: false }).populate('account_id payment_id');
+            availments = await Availment.find({ account_id: account._id, is_paid: false })
+            .populate({
+                path:'account_id payment_id',
+                path: 'account_id', populate: 'customer_id'
+            });
+
+            availmentData = availments.map(avail => {
+                return {
+                    availment_amount: avail.availment_amount,
+                    loan_date: avail.loan_date,
+                    loan_due_date: avail.loan_due_date
+                }
+            })
+
+            data = {
+                account_number: employee_acct_no,
+                availmentData
+            }
         } else {
-            availments = await Availment.find().populate('account_id payment_id');
+            availments = await Availment.find()
+            .populate({
+                path:'account_id payment_id',
+                path: 'account_id', populate: 'customer_id'
+            });
+            availmentData = availments.map(avail => {
+                const customerName = `${avail.account_id.customer_id.first_name} ${avail.account_id.customer_id.last_name}` || 'No Customer Name'
+                return {
+                    availment_amount: avail.availment_amount,
+                    loan_date: avail.loan_date,
+                    loan_due_date: avail.loan_due_date,
+                    customer_name: customerName
+                }
+            })
+            data = {
+                account_number: employee_acct_no,
+                availmentData
+            }
         }
         
-        const data = {
-            account_number: employee_acct_no,
-            availments
-        }
-
         res.status(200).json(data);
     } catch(err) {
         console.log(err);
         res.status(500).json({ message: err.message || serverErrorMessage, error: err })
     }
-    
-
-   
 }
 
