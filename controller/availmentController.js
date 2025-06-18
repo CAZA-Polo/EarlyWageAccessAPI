@@ -125,7 +125,7 @@ module.exports.avail_cash_advance = async(req,res) => {
         res.status(201).json({ 
             message: 'Availment successful', 
             availment_fee: availmentFee,
-            account_number,
+            account_number
         });
     } catch(err) {
         console.log(err);

@@ -1,4 +1,5 @@
 const Customer = require('../model/Customer');
+const CustomerCounter = require('../model/CustomerCounter');
 const mongoose = require('mongoose');
 const serverErrorMessage = 'Internal server error, please try again';
 
@@ -32,13 +33,35 @@ module.exports.get_customer = async (req,res) => {
 }
 
 module.exports.add_customer = async(req,res) => {
-
-    if(req.body.is_employer && !req.body.customer_name) {
-        return res.status(400).json({ message: 'Customer name must be filled if the customer is an employer' })
-    }
+    // Remove this to modify for general adding of customer
+    // if(req.body.is_employer && !req.body.customer_name) {
+    //     return res.status(400).json({ message: 'Customer name must be filled if the customer is an employer' })
+    // }
 
     try {
-        const customer = await Customer.create(req.body);
+        const counter = await CustomerCounter.findById('customer');
+        let customerRef = 1; // Add this for counter of customer reference id
+        if(!counter) {
+            await CustomerCounter.create({ _id: 'customer', sequence_value: customerRef });
+        } else {
+            const newCounter = await CustomerCounter.findByIdAndUpdate(
+                { _id: 'customer' },
+                { $inc: { sequence_value: 1 } }, // Increment the sequence_value by 1
+                { new: true, upsert: true }
+            )
+            customerRef = newCounter.sequence_value;
+            console.log(newCounter);
+        }
+
+        const newCustomerData = {
+            ...req.body,
+            customer_reference: customerRef
+        }
+        console.log(customerRef);
+
+        console.log(newCustomerData);
+
+        const customer = await Customer.create(newCustomerData);
         res.status(201).json({ message: `${customer.first_name} ${customer.last_name} has been added to customer record`, customer_id: customer._id });
     } catch(err) {
         console.log(err);

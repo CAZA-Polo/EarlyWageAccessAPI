@@ -5,11 +5,19 @@ const AccountCounter = require('../model/AccountCounter');
 const serverErrorMessage = 'Internal server error, please try again';
 
 module.exports.onboard_employer = async(req,res) => {
-    const { employer_id, account_balance, is_employer } = req.body;
+    const { employer_id, account_balance, company_name } = req.body;
+    
     const preAcctName = 'CAZA';
+    const is_employer = true;
+
     try {
+        
+        // Look for this customer employer before searching
+        const customer = await Customer.findOne({ customer_reference: employer_id });
+        if(!customer) return res.status(404).json({ message: 'Employer ID is not existing' });
+
         // Tag customer as employer
-        await Customer.findByIdAndUpdate(employer_id, { is_employer: is_employer });
+        await Customer.findByIdAndUpdate(employer_id, { is_employer: is_employer, company_name });
         console.log(`Customer ${employer_id} has been tagged as employer`);
 
         // Create an Account for the employer customer

@@ -26,14 +26,17 @@ module.exports.get_accounts = async(req,res) => {
 }
 
 module.exports.get_account = async(req,res) => {
+    // Changes
+    // Change id from mongodb to account number in searching
+    
     const { id } = req.params; // might also be account number for searching
 
     const checkIdMessage = validateId(id);
 
-    if(checkIdMessage) return res.status(400).json({ message: checkIdMessage });
+    // if(checkIdMessage) return res.status(400).json({ message: checkIdMessage });
 
     try {
-        const account = Account.findOne({ _id: id, is_deleted: false, is_active: true});
+        const account = await Account.findOne({ account_number: id, is_deleted: false, is_active: true});
         if(!account) return res.status(404).json({ message: `Account with ID ${id} does not exist` });
         res.status(200).json(account);
     } catch(err) {
